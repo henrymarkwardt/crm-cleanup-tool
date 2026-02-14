@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM Data Cleanup Tool</title>
+
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #ffffff;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+
+    h1 {
+      color: #000000;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    h2 {
+      color: #000000;
+      margin-bottom: 15px;
+      font-size: 20px;
+    }
+
+    .subtitle {
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    /* Upload Screen */
+    .upload-area {
+      border: 2px dashed #96c950;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      background: #f8f9fa;
+      margin: 20px 0;
+    }
+
+    .upload-area input[type="file"] {
+      margin: 20px 0;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    .instructions {
+      background: #f0f7e6;
+      border-left: 4px solid #96c950;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    .how-it-works {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+
+    .how-it-works-header {
+      background: #96c950;
+      color: white;
+      padding: 12px 15px;
+      cursor: pointer;
+      font-weight: bold;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .how-it-works-header:hover {
+      background: #87ba41;
+    }
+
+    .how-it-works-content {
+      padding: 15px;
+      display: none;
+    }
+
+    .how-it-works-content.expanded {
+      display: block;
+    }
+
+    .how-it-works-content ol {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+
+    .how-it-works-content li {
+      margin: 8px 0;
+    }
+
+    .instructions ul {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+
+    .instructions li {
+      margin: 5px 0;
+    }
+
+    /* Progress Section */
+    .progress-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .progress-text {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 30px;
+      background: #e9ecef;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #96c950 0%, #87ba41 100%);
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .progress-stats {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* Edit Section */
+    .row-indicator {
+      background: #6c757d;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .primary-fields {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .field-group {
+      margin-bottom: 15px;
+    }
+
+    .field-group label {
+      display: block;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .field-group label .required {
+      color: #dc3545;
+      font-size: 12px;
+    }
+
+    .field-group input,
+    .field-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .field-group input:focus,
+    .field-group textarea:focus {
+      outline: none;
+      border-color: #96c950;
+      box-shadow: 0 0 0 3px rgba(150,201,80,0.2);
+    }
+
+    .field-group.empty input {
+      background: #fff8dc;
+      border-color: #ffc107;
+    }
+
+    .field-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+      background: white;
+    }
+
+    .field-group select:focus {
+      outline: none;
+      border-color: #96c950;
+      box-shadow: 0 0 0 3px rgba(150,201,80,0.2);
+    }
+
+    .linkedin-search {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .linkedin-btn {
+      display: inline-block;
+      background: #0077b5;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+    }
+
+    .linkedin-btn:hover {
+      background: #005582;
+    }
+
+    .sheet-appearances {
+      background: #f0f7e6;
+      border: 1px solid #96c950;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+
+    .sheet-appearances h4 {
+      margin: 0 0 10px 0;
+      color: #2d5016;
+      font-size: 14px;
+    }
+
+    .sheet-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .sheet-tag {
+      background: #96c950;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .quick-fields {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .quick-fields .field-group {
+      margin-bottom: 15px;
+    }
+
+    .quick-fields .field-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .other-fields {
+      margin-top: 20px;
+    }
+
+    .other-fields-header {
+      background: #e9ecef;
+      padding: 12px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #333;
+      user-select: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .other-fields-header:hover {
+      background: #dee2e6;
+    }
+
+    .other-fields-content {
+      margin-top: 15px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+    }
+
+    .other-fields-content.collapsed {
+      display: none;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      margin-top: 30px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: #96c950;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #87ba41;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    /* Completion Screen */
+    .completion-screen {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .completion-screen h2 {
+      color: #96c950;
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+
+    .completion-screen p {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    /* Utility */
+    .hidden {
+      display: none;
+    }
+
+    .alert {
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+
+    .alert-success {
+      background: #f0f7e6;
+      border: 1px solid #96c950;
+      color: #2d5016;
+    }
+
+    .alert-info {
+      background: #f0f7e6;
+      border: 1px solid #96c950;
+      color: #2d5016;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .other-fields-content {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="app"></div>
+  </div>
+
+  <script>
+    // ===== CONSTANTS =====
+    const STORAGE_KEY = 'crm-cleanup-state';
+    const REQUIRED_COLUMNS = ['First Name', 'Last Name', 'Contact Info'];
+    const SHEET_NAME = '00. Master CRM';
+
+    // ===== GLOBAL STATE =====
+    let globalState = null;
+
+    // ===== STATE MANAGEMENT CLASS =====
+    class AppState {
+      constructor() {
+        this.currentRowIndex = 0;
+        this.processedRows = [];
+        this.deletedRowIds = [];
+        this.rowsNeedingEdit = [];
+        this.totalRows = 0;
+        this.lastSaveTimestamp = Date.now();
+        this.allColumns = [];
+        this.sheetAppearances = {};
+      }
+
+      save() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this));
+          console.log('State saved successfully');
+        } catch (e) {
+          console.error('Error saving state:', e);
+          alert('Warning: Could not save progress to browser storage. Your changes may be lost if you refresh.');
+        }
+      }
+
+      static load() {
+        try {
+          const data = localStorage.getItem(STORAGE_KEY);
+          if (!data) return null;
+
+          const parsed = JSON.parse(data);
+          const state = new AppState();
+          Object.assign(state, parsed);
+          console.log('State loaded successfully');
+          return state;
+        } catch (e) {
+          console.error('Error loading state:', e);
+          return null;
+        }
+      }
+
+      static clear() {
+        localStorage.removeItem(STORAGE_KEY);
+        console.log('State cleared');
+      }
+
+      getCurrentRow() {
+        if (this.currentRowIndex >= this.rowsNeedingEdit.length) {
+          return null;
+        }
+        const rowIndex = this.rowsNeedingEdit[this.currentRowIndex];
+        return this.processedRows[rowIndex];
+      }
+
+      getCurrentRowActualIndex() {
+        if (this.currentRowIndex >= this.rowsNeedingEdit.length) {
+          return null;
+        }
+        return this.rowsNeedingEdit[this.currentRowIndex];
+      }
+
+      updateCurrentRow(rowData) {
+        const rowIndex = this.rowsNeedingEdit[this.currentRowIndex];
+        this.processedRows[rowIndex] = rowData;
+        this.lastSaveTimestamp = Date.now();
+        this.save();
+      }
+
+      deleteCurrentRow() {
+        const rowIndex = this.rowsNeedingEdit[this.currentRowIndex];
+        const row = this.processedRows[rowIndex];
+        const uniqueId = row['Unique ID'] || row['unique id'] || String(rowIndex);
+
+        if (!this.deletedRowIds.includes(uniqueId)) {
+          this.deletedRowIds.push(uniqueId);
+        }
+
+        this.lastSaveTimestamp = Date.now();
+        this.save();
+      }
+
+      moveToNext() {
+        this.currentRowIndex++;
+        this.save();
+      }
+
+      getProgress() {
+        const total = this.rowsNeedingEdit.length;
+        const completed = this.currentRowIndex;
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        return {
+          current: completed,
+          total: total,
+          percentage: percentage,
+          totalRows: this.totalRows,
+          deletedCount: this.deletedRowIds.length
+        };
+      }
+
+      isComplete() {
+        return this.currentRowIndex >= this.rowsNeedingEdit.length;
+      }
+    }
+
+    // ===== FILE HANDLING FUNCTIONS =====
+    function handleExcelUpload(file) {
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+
+          // Find the correct sheet
+          if (!workbook.Sheets[SHEET_NAME]) {
+            alert(`Sheet "${SHEET_NAME}" not found! Available sheets: ${Object.keys(workbook.Sheets).join(', ')}`);
+            return;
+          }
+
+          const worksheet = workbook.Sheets[SHEET_NAME];
+
+          // Convert to CSV
+          const csv = XLSX.utils.sheet_to_csv(worksheet);
+
+          // Also scan all other sheets to track where people appear
+          const sheetAppearances = {};
+          const allSheetNames = Object.keys(workbook.Sheets);
+
+          allSheetNames.forEach(sheetName => {
+            if (sheetName === SHEET_NAME) return; // Skip main sheet
+
+            try {
+              const sheet = workbook.Sheets[sheetName];
+              const sheetCsv = XLSX.utils.sheet_to_csv(sheet);
+
+              Papa.parse(sheetCsv, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(sheetResults) {
+                  sheetResults.data.forEach(row => {
+                    const firstName = (row['First Name'] || '').trim();
+                    const lastName = (row['Last Name'] || '').trim();
+
+                    if (firstName && lastName) {
+                      const personKey = `${firstName}|||${lastName}`.toLowerCase();
+                      if (!sheetAppearances[personKey]) {
+                        sheetAppearances[personKey] = [];
+                      }
+                      if (!sheetAppearances[personKey].includes(sheetName)) {
+                        sheetAppearances[personKey].push(sheetName);
+                      }
+                    }
+                  });
+                }
+              });
+            } catch (e) {
+              console.log(`Could not scan sheet: ${sheetName}`, e);
+            }
+          });
+
+          // Parse CSV with PapaParse
+          Papa.parse(csv, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              initializeApp(results.data, sheetAppearances);
+            },
+            error: function(error) {
+              alert('Error parsing Excel file: ' + error.message);
+            }
+          });
+        } catch (error) {
+          alert('Error reading Excel file: ' + error.message);
+        }
+      };
+
+      reader.onerror = function() {
+        alert('Error reading file. Please try again.');
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function downloadCSV(csvString, filename) {
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvString], {
+        type: 'text/csv;charset=utf-8;'
+      });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    // ===== CSV OPERATIONS =====
+    function getContactInfoKey(row) {
+      // Find the contact info column - it might have different formatting
+      const possibleKeys = Object.keys(row).filter(key =>
+        key.toLowerCase().includes('contact info')
+      );
+      return possibleKeys[0] || 'Contact Info';
+    }
+
+    function getContactInfo(row) {
+      const key = getContactInfoKey(row);
+      return (row[key] || '').trim();
+    }
+
+    function doesRowNeedEditing(row) {
+      const firstName = (row['First Name'] || '').trim();
+      const lastName = (row['Last Name'] || '').trim();
+      const contactInfo = getContactInfo(row);
+
+      return (
+        !firstName || firstName.length === 1 ||
+        !lastName || lastName.length === 1 ||
+        !contactInfo || contactInfo.length === 1
+      );
+    }
+
+    function identifyRowsNeedingEdit(rows) {
+      const indices = [];
+      rows.forEach((row, index) => {
+        if (doesRowNeedEditing(row)) {
+          indices.push(index);
+        }
+      });
+      return indices;
+    }
+
+    function rebuildWorkingCSV(state) {
+      const deletedIds = new Set(state.deletedRowIds);
+      const activeRows = state.processedRows.filter((row, index) => {
+        const uniqueId = row['Unique ID'] || row['unique id'] || String(index);
+        return !deletedIds.has(uniqueId);
+      });
+
+      return Papa.unparse(activeRows, {
+        quotes: true,
+        quoteChar: '"',
+        escapeChar: '"',
+        delimiter: ",",
+        header: true,
+        newline: "\r\n"
+      });
+    }
+
+    function initializeApp(rows, sheetAppearances = {}) {
+      if (!rows || rows.length === 0) {
+        alert('No data found in the Excel file.');
+        return;
+      }
+
+      const state = new AppState();
+      state.processedRows = rows;
+      state.totalRows = rows.length;
+      state.rowsNeedingEdit = identifyRowsNeedingEdit(rows);
+      state.sheetAppearances = sheetAppearances;
+
+      // Extract all column names
+      if (rows.length > 0) {
+        state.allColumns = Object.keys(rows[0]);
+      }
+
+      // Save initial state
+      state.save();
+      globalState = state;
+
+      // Download original CSV as backup
+      const originalCSV = Papa.unparse(rows, {
+        quotes: true,
+        delimiter: ",",
+        header: true,
+        newline: "\r\n"
+      });
+      downloadCSV(originalCSV, 'original.csv');
+
+      if (state.rowsNeedingEdit.length === 0) {
+        renderCompletionScreen(true);
+      } else {
+        renderEditScreen();
+      }
+    }
+
+    // ===== UI RENDERING FUNCTIONS =====
+    function renderUploadScreen() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <h1>CRM Data Cleanup Tool</h1>
+        <p class="subtitle">Clean up and fill in missing information for your CRM data</p>
+
+        <div class="how-it-works">
+          <div class="how-it-works-header" onclick="toggleHowItWorks()">
+            <span>How This Works</span>
+            <span id="howItWorksArrow">▼</span>
+          </div>
+          <div class="how-it-works-content" id="howItWorksContent">
+            <p><strong>This tool helps you clean up incomplete CRM data efficiently:</strong></p>
+            <ol>
+              <li><strong>Upload:</strong> Select your Excel file containing the "00. Master CRM" sheet</li>
+              <li><strong>Smart Detection:</strong> The app automatically identifies rows with missing or incomplete data (First Name, Last Name, or Contact Info that are empty or only 1 character)</li>
+              <li><strong>Review & Edit:</strong> For each incomplete row, you'll see:
+                <ul style="margin-left: 20px; margin-top: 5px;">
+                  <li>Primary fields (First Name, Last Name, Contact Info) highlighted for editing</li>
+                  <li>LinkedIn search button to help research the person</li>
+                  <li>Quick access to Notes, SME, Relationship, and Investor Type</li>
+                  <li>All other fields available in a collapsible section</li>
+                </ul>
+              </li>
+              <li><strong>Save & Navigate:</strong> Click "Save and Continue" to save your changes and move to the next row</li>
+              <li><strong>Auto-Backup:</strong> Your progress is automatically saved in your browser. Click "Save Progress" button to download a working CSV file anytime</li>
+              <li><strong>Complete:</strong> Once you've reviewed all incomplete rows, download your final cleaned CSV file</li>
+            </ol>
+            <p style="margin-top: 15px;"><strong>Note:</strong> Your original data is backed up as "original.csv" when you first upload the file.</p>
+          </div>
+        </div>
+
+        <div class="upload-area">
+          <h2>Upload Excel File</h2>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" />
+          <p style="margin-top: 20px; color: #666;">Select the "01 Master Investor CRM" Excel file</p>
+        </div>
+
+        ${globalState ? `
+          <div class="alert alert-info">
+            <strong>Previous session found!</strong> You can continue where you left off, or upload a new file to start over.
+            <button class="btn btn-secondary" onclick="resumeSession()" style="margin-top: 10px;">Resume Previous Session</button>
+          </div>
+        ` : ''}
+      `;
+
+      document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          handleExcelUpload(file);
+        }
+      });
+    }
+
+    function renderEditScreen() {
+      const state = globalState;
+
+      if (!state || state.isComplete()) {
+        renderCompletionScreen(false);
+        return;
+      }
+
+      const row = state.getCurrentRow();
+      const rowActualIndex = state.getCurrentRowActualIndex();
+      const progress = state.getProgress();
+
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <h1>CRM Data Cleanup Tool</h1>
+        <p class="subtitle">Review and edit incomplete records</p>
+
+        <div class="progress-section">
+          <div class="progress-text">
+            Progress: Row ${progress.current + 1} of ${progress.total} needing editing (${progress.percentage}%)
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width: ${progress.percentage}%">
+              ${progress.percentage}%
+            </div>
+          </div>
+          <div class="progress-stats">
+            Total: ${progress.totalRows} rows | ${progress.total} need editing | ${progress.deletedCount} deleted
+          </div>
+        </div>
+
+        <div class="row-indicator">
+          Currently Editing: Row #${rowActualIndex + 1} ${row['Unique ID'] ? `(ID: ${row['Unique ID']})` : ''}
+        </div>
+
+        <div class="primary-fields">
+          <div class="field-group ${!row['First Name'] || row['First Name'].trim().length <= 1 ? 'empty' : ''}">
+            <label>First Name <span class="required">*REQUIRED*</span></label>
+            <input type="text" id="firstName" value="${row['First Name'] || ''}" />
+          </div>
+
+          <div class="field-group ${!row['Last Name'] || row['Last Name'].trim().length <= 1 ? 'empty' : ''}">
+            <label>Last Name <span class="required">*REQUIRED*</span></label>
+            <input type="text" id="lastName" value="${row['Last Name'] || ''}" />
+          </div>
+
+          <div class="field-group ${!getContactInfo(row) || getContactInfo(row).length <= 1 ? 'empty' : ''}">
+            <label>Contact Info (Email / Phone) <span class="required">*REQUIRED*</span></label>
+            <input type="text" id="contactInfo" value="${getContactInfo(row)}" data-original-key="${getContactInfoKey(row)}" />
+          </div>
+
+          <div class="linkedin-search">
+            <button class="linkedin-btn" onclick="openLinkedInSearch()">
+              🔍 Search LinkedIn for this person
+            </button>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="onSaveAndContinue()">
+            Save and Continue
+          </button>
+          <button class="btn btn-danger" onclick="onDeleteRow()">
+            Delete Row
+          </button>
+          <button class="btn btn-secondary" onclick="onSkipForNow()">
+            Skip for Now
+          </button>
+          <button class="btn btn-primary" onclick="onSaveProgress()" style="background: #87ba41;">
+            Save Progress (Download CSV)
+          </button>
+        </div>
+
+        ${renderSheetAppearances(row, state)}
+
+        <div class="quick-fields" style="margin-top: 20px;">
+          <div class="field-group">
+            <label>Investor Type</label>
+            <select id="field_Investor_Type">
+              <option value="">-- Select Type --</option>
+              <option value="Individual" ${(row['Investor Type (Individual, RIA, B/D, VC, FO)'] || '').includes('Individual') ? 'selected' : ''}>Individual</option>
+              <option value="RIA" ${(row['Investor Type (Individual, RIA, B/D, VC, FO)'] || '').includes('RIA') ? 'selected' : ''}>RIA</option>
+              <option value="B/D" ${(row['Investor Type (Individual, RIA, B/D, VC, FO)'] || '').includes('B/D') ? 'selected' : ''}>B/D</option>
+              <option value="VC" ${(row['Investor Type (Individual, RIA, B/D, VC, FO)'] || '').includes('VC') ? 'selected' : ''}>VC</option>
+              <option value="FO" ${(row['Investor Type (Individual, RIA, B/D, VC, FO)'] || '').includes('FO') ? 'selected' : ''}>FO</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Notes</label>
+            <textarea id="field_Notes" rows="3">${row['Notes'] || ''}</textarea>
+          </div>
+          <div class="field-group">
+            <label>SME</label>
+            <input type="text" id="field_SME" value="${row['SME'] || row['SME '] || ''}" />
+          </div>
+          <div class="field-group">
+            <label>Relationship</label>
+            <input type="text" id="field_Relationship" value="${row['Relationship'] || ''}" />
+          </div>
+        </div>
+
+        <div class="other-fields">
+          <div class="other-fields-header" onclick="toggleOtherFields()">
+            <span>▼ Other Fields (Click to expand/collapse)</span>
+            <span>${state.allColumns.length - 7} additional fields</span>
+          </div>
+          <div class="other-fields-content" id="otherFieldsContent">
+            ${renderOtherFields(row, state.allColumns)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderOtherFields(row, allColumns) {
+      const excludedColumns = ['First Name', 'Last Name', 'Notes', 'SME', 'SME ', 'Relationship', 'Investor Type (Individual, RIA, B/D, VC, FO)'];
+      const otherColumns = allColumns.filter(col => {
+        return !excludedColumns.includes(col) &&
+               !col.toLowerCase().includes('contact info');
+      });
+
+      return otherColumns.map(col => `
+        <div class="field-group">
+          <label>${col}</label>
+          ${col === 'Notes' || (row[col] && row[col].length > 100) ?
+            `<textarea id="field_${sanitizeId(col)}" rows="3">${row[col] || ''}</textarea>` :
+            `<input type="text" id="field_${sanitizeId(col)}" value="${row[col] || ''}" />`
+          }
+        </div>
+      `).join('');
+    }
+
+    function renderSheetAppearances(row, state) {
+      const firstName = (row['First Name'] || '').trim();
+      const lastName = (row['Last Name'] || '').trim();
+
+      if (!firstName || !lastName) {
+        return '';
+      }
+
+      const personKey = `${firstName}|||${lastName}`.toLowerCase();
+      const appearances = (state.sheetAppearances && state.sheetAppearances[personKey]) || [];
+
+      if (appearances.length === 0) {
+        return '';
+      }
+
+      return `
+        <div class="sheet-appearances">
+          <h4>📊 This person appears in these other sheets:</h4>
+          <div class="sheet-list">
+            ${appearances.map(sheet => `<span class="sheet-tag">${sheet}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCompletionScreen(allComplete) {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="completion-screen">
+          <h2>🎉 ${allComplete ? 'All Data is Complete!' : 'Cleanup Complete!'}</h2>
+          <p>${allComplete ?
+            'No rows needed editing. Your CRM data is already clean!' :
+            'You have successfully processed all rows that needed editing.'
+          }</p>
+
+          <div class="alert alert-success">
+            <strong>Your cleaned data has been saved!</strong><br>
+            Check your downloads folder for the "working.csv" file.
+          </div>
+
+          <button class="btn btn-primary" onclick="downloadFinalCSV()">
+            Download Final CSV
+          </button>
+
+          <button class="btn btn-secondary" onclick="startOver()">
+            Start Over with New File
+          </button>
+        </div>
+      `;
+    }
+
+    // ===== EVENT HANDLERS =====
+    function onSaveAndContinue() {
+      const state = globalState;
+      const row = state.getCurrentRow();
+
+      // Collect all field values
+      const updatedRow = {};
+
+      // Primary fields
+      updatedRow['First Name'] = document.getElementById('firstName').value;
+      updatedRow['Last Name'] = document.getElementById('lastName').value;
+      const contactInfoKey = getContactInfoKey(row);
+      updatedRow[contactInfoKey] = document.getElementById('contactInfo').value;
+
+      // Other fields
+      state.allColumns.forEach(col => {
+        const isContactInfoCol = col.toLowerCase().includes('contact info');
+        if (col !== 'First Name' && col !== 'Last Name' && !isContactInfoCol) {
+          const elem = document.getElementById(`field_${sanitizeId(col)}`);
+          if (elem) {
+            updatedRow[col] = elem.value;
+          } else {
+            updatedRow[col] = row[col] || '';
+          }
+        }
+      });
+
+      // Preserve original structure
+      Object.keys(row).forEach(key => {
+        if (!updatedRow.hasOwnProperty(key)) {
+          updatedRow[key] = row[key];
+        }
+      });
+
+      // Update state
+      state.updateCurrentRow(updatedRow);
+
+      // Move to next
+      state.moveToNext();
+
+      // Render next screen
+      if (state.isComplete()) {
+        renderCompletionScreen(false);
+      } else {
+        renderEditScreen();
+      }
+    }
+
+    function onDeleteRow() {
+      if (confirm('Are you sure you want to delete this row? This cannot be undone.')) {
+        const state = globalState;
+
+        state.deleteCurrentRow();
+
+        // Move to next
+        state.moveToNext();
+
+        // Render next screen
+        if (state.isComplete()) {
+          renderCompletionScreen(false);
+        } else {
+          renderEditScreen();
+        }
+      }
+    }
+
+    function onSaveProgress() {
+      const state = globalState;
+
+      // Rebuild and download CSV with current progress
+      const csv = rebuildWorkingCSV(state);
+      downloadCSV(csv, 'working.csv');
+
+      alert('Progress saved! CSV downloaded to your downloads folder.');
+    }
+
+    function onSkipForNow() {
+      const state = globalState;
+
+      // Move to next without saving
+      state.moveToNext();
+
+      // Render next screen
+      if (state.isComplete()) {
+        renderCompletionScreen(false);
+      } else {
+        renderEditScreen();
+      }
+    }
+
+    function openLinkedInSearch() {
+      const firstName = document.getElementById('firstName').value;
+      const lastName = document.getElementById('lastName').value;
+      const contactInfo = document.getElementById('contactInfo').value;
+
+      const query = `${firstName} ${lastName} ${contactInfo} linkedin`;
+      const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      window.open(url, '_blank');
+    }
+
+    function toggleOtherFields() {
+      const content = document.getElementById('otherFieldsContent');
+      content.classList.toggle('collapsed');
+
+      const header = document.querySelector('.other-fields-header span');
+      if (content.classList.contains('collapsed')) {
+        header.textContent = '▶ Other Fields (Click to expand/collapse)';
+      } else {
+        header.textContent = '▼ Other Fields (Click to expand/collapse)';
+      }
+    }
+
+    function toggleHowItWorks() {
+      const content = document.getElementById('howItWorksContent');
+      const arrow = document.getElementById('howItWorksArrow');
+
+      content.classList.toggle('expanded');
+
+      if (content.classList.contains('expanded')) {
+        arrow.textContent = '▲';
+      } else {
+        arrow.textContent = '▼';
+      }
+    }
+
+    function downloadFinalCSV() {
+      const csv = rebuildWorkingCSV(globalState);
+      downloadCSV(csv, 'working-final.csv');
+    }
+
+    function startOver() {
+      if (confirm('Are you sure you want to start over? This will clear all progress.')) {
+        AppState.clear();
+        globalState = null;
+        renderUploadScreen();
+      }
+    }
+
+    function resumeSession() {
+      if (globalState) {
+        renderEditScreen();
+      }
+    }
+
+    // ===== UTILITIES =====
+    function sanitizeId(str) {
+      return str.replace(/[^a-zA-Z0-9]/g, '_');
+    }
+
+    // ===== INITIALIZATION =====
+    document.addEventListener('DOMContentLoaded', function() {
+      // Try to load existing state
+      globalState = AppState.load();
+
+      if (globalState && globalState.processedRows.length > 0) {
+        // Has previous session
+        renderUploadScreen();
+      } else {
+        // No previous session
+        globalState = null;
+        renderUploadScreen();
+      }
+    });
+  </script>
+</body>
+</html>
