@@ -597,7 +597,7 @@ function getCompanyFromEmail(emailCell) {
 
 function rowHasMissing(rowObj, headers) {
   // Skip auto-derived cols from missing check
-  const SKIP = new Set(['Personal or Work Email', 'Investor Y/N']);
+  const SKIP = new Set(['Personal or Work Email', 'Investor Y/N', 'TAG']);
   for (const h of headers) {
     if (SKIP.has(h)) continue;
     if (!rowObj[h] || rowObj[h].trim() === '') return true;
@@ -759,17 +759,22 @@ function renderEssential(row) {
   essentialMapped.forEach(colKey => {
     const val = row[colKey] ?? '';
     const isEmpty = !val || val.trim() === '';
+    const isTagField = colKey === 'TAG';
     const fg = document.createElement('div');
     fg.className = 'field-group';
 
     // Label
     const label = document.createElement('label');
-    label.textContent = colKey.replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
-    if (isEmpty) {
-      const badge = document.createElement('span');
-      badge.className = 'empty-badge';
-      badge.textContent = 'EMPTY';
-      label.appendChild(badge);
+    if (isTagField) {
+      label.textContent = 'Tag (tag this with someone who may know this person)';
+    } else {
+      label.textContent = colKey.replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+      if (isEmpty) {
+        const badge = document.createElement('span');
+        badge.className = 'empty-badge';
+        badge.textContent = 'EMPTY';
+        label.appendChild(badge);
+      }
     }
     fg.appendChild(label);
 
@@ -797,10 +802,17 @@ function renderEssential(row) {
       input = document.createElement('input');
       input.type = 'text';
       input.value = val;
-      input.className = isEmpty ? 'empty' : '';
+      if (isTagField) {
+        input.placeholder = 'Ex: Dexter';
+        input.className = ''; // Never red for TAG
+      } else {
+        input.className = isEmpty ? 'empty' : '';
+      }
       input.addEventListener('input', () => {
         row[colKey] = input.value;
-        input.className = input.value.trim() === '' ? 'empty' : '';
+        if (!isTagField) {
+          input.className = input.value.trim() === '' ? 'empty' : '';
+        }
       });
     }
     input.dataset.col = colKey;
