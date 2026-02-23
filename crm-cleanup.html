@@ -472,11 +472,6 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Ask ChatGPT to fill missing fields
       </a>
-      <div class="tag-group">
-        <label>TAG <span style="text-transform:none;font-weight:400;color:#aaa">(tag someone who may know more)</span></label>
-        <input type="text" id="tag-input" placeholder="e.g. John Smith">
-        <div class="tag-hint">Saved in the TAG column for this contact.</div>
-      </div>
     </div>
   </div>
 
@@ -569,7 +564,7 @@ let state = {
   savedCount: 0
 };
 
-const ESSENTIAL = ['First Name', 'Last Name', 'Email', 'LinkedIn', 'Investor Type  (Individual, RIA, B/D, VC, FO)', 'Organization', 'SME'];
+const ESSENTIAL = ['First Name', 'Last Name', 'Email', 'LinkedIn', 'Investor Type  (Individual, RIA, B/D, VC, FO)', 'Organization', 'SME', 'TAG'];
 
 const PERSONAL_DOMAINS = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','aol.com','me.com','live.com','msn.com','protonmail.com','proton.me','mail.com','ymail.com','googlemail.com']);
 
@@ -742,10 +737,6 @@ function renderRow() {
   renderEssential(row);
   renderSearchLinks(row);
   renderRemaining(row);
-
-  // Populate TAG input
-  const tagInput = document.getElementById('tag-input');
-  tagInput.value = row['TAG'] || '';
 }
 
 function renderEssential(row) {
@@ -974,10 +965,6 @@ function isLongText(colKey) {
 function saveAndContinue() {
   const rowIdx = state.incompleteIdxs[state.cursor];
   const row = state.rows[rowIdx];
-
-  // Save TAG from action bar input
-  const tagInput = document.getElementById('tag-input');
-  if (tagInput.value.trim()) row['TAG'] = tagInput.value.trim();
 
   // Auto-derive Personal or Work Email
   const email = row['Email'] || '';
