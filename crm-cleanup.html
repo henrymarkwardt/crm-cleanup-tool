@@ -342,21 +342,10 @@
   .modal-box p { font-size: 0.9rem; color: #555; line-height: 1.55; margin-bottom: 1.25rem; }
   .modal-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
 
-  /* tag row in action bar */
-  .action-bar {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-    justify-content: flex-end;
-    margin-top: 1.25rem;
-    flex-wrap: wrap;
-    position: sticky;
-    bottom: 1rem;
-  }
+  /* tag field in search links */
   .tag-group {
     display: flex;
     flex-direction: column;
-    margin-right: auto;
   }
   .tag-group label {
     font-size: 0.72rem;
@@ -380,6 +369,18 @@
     width: 220px;
   }
   .tag-group input:focus { outline: none; border-color: #4f6ef7; }
+
+  /* action bar */
+  .action-bar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+    position: sticky;
+    bottom: 1rem;
+  }
 </style>
 </head>
 <body>
@@ -471,6 +472,11 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Ask ChatGPT to fill missing fields
       </a>
+      <div class="tag-group">
+        <label>TAG <span style="text-transform:none;font-weight:400;color:#aaa">(tag someone who may know more)</span></label>
+        <input type="text" id="tag-input" placeholder="e.g. John Smith">
+        <div class="tag-hint">Saved in the TAG column for this contact.</div>
+      </div>
     </div>
   </div>
 
@@ -482,11 +488,6 @@
 
   <!-- Action bar -->
   <div class="action-bar">
-    <div class="tag-group">
-      <label>TAG <span style="text-transform:none;font-weight:400;color:#aaa">(tag someone you think may know more about this individual)</span></label>
-      <input type="text" id="tag-input" placeholder="e.g. John Smith">
-      <div class="tag-hint">This will be saved in the TAG column for this contact.</div>
-    </div>
     <button class="btn btn-secondary" onclick="skipRow()">Skip</button>
     <button class="btn btn-primary" style="min-width:160px" onclick="saveAndContinue()">Save &amp; Continue →</button>
   </div>
@@ -568,7 +569,7 @@ let state = {
   savedCount: 0
 };
 
-const ESSENTIAL = ['First Name', 'Last Name', 'Email', 'Investor Type  (Individual, RIA, B/D, VC, FO)', 'Organization', 'SME'];
+const ESSENTIAL = ['First Name', 'Last Name', 'Email', 'LinkedIn', 'Investor Type  (Individual, RIA, B/D, VC, FO)', 'Organization', 'SME'];
 
 const PERSONAL_DOMAINS = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','aol.com','me.com','live.com','msn.com','protonmail.com','proton.me','mail.com','ymail.com','googlemail.com']);
 
