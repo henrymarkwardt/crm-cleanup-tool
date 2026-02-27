@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRM Cleanup Tool</title>
+<title>CRM Cleanup Tool V2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -157,13 +157,55 @@
     margin-bottom: 1rem;
   }
 
+  /* Confidence Legend */
+  .confidence-legend {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    margin-bottom: 1rem;
+  }
+
+  .legend-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 1rem;
+  }
+
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .legend-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    border: 1.5px solid #d0d5dd;
+  }
+
+  .legend-color.empty { background: #fff5f6; border-color: #ff4757; }
+  .legend-color.low { background: #ffe8cc; border-color: #ff9800; }
+  .legend-color.medium { background: #fff4cc; border-color: #ffa502; }
+  .legend-color.high { background: #fffbf0; border-color: #ffc107; }
+  .legend-color.confirmed { background: #e8f5e9; border-color: #4caf50; }
+
   .essential-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 0.85rem;
   }
 
-  .field-group { display: flex; flex-direction: column; }
+  .field-group { display: flex; flex-direction: column; position: relative; }
 
   .field-group label {
     font-size: 0.75rem;
@@ -196,9 +238,51 @@
     background: #fff5f6;
   }
 
-  .field-group input.autofilled, .field-group textarea.autofilled {
+  /* LLM confidence levels */
+  .field-group input.llm-low, .field-group textarea.llm-low, .field-group select.llm-low {
+    border-color: #ff9800;
+    background: #ffe8cc;
+  }
+
+  .field-group input.llm-medium, .field-group textarea.llm-medium, .field-group select.llm-medium {
     border-color: #ffa502;
+    background: #fff4cc;
+  }
+
+  .field-group input.llm-high, .field-group textarea.llm-high, .field-group select.llm-high {
+    border-color: #ffc107;
     background: #fffbf0;
+  }
+
+  .field-group input.llm-confirmed, .field-group textarea.llm-confirmed, .field-group select.llm-confirmed {
+    border-color: #4caf50;
+    background: #e8f5e9;
+  }
+
+  .confirm-btn {
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    background: #4f6ef7;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .confirm-btn:hover {
+    background: #3a59e8;
+  }
+
+  .confirm-btn.confirmed {
+    background: #4caf50;
+    cursor: default;
+  }
+
+  .confirm-btn.confirmed:hover {
+    background: #4caf50;
   }
 
   /* search links row */
@@ -228,11 +312,12 @@
   }
   .link-google:hover { background: #e2e6ea; }
 
-  .link-chatgpt {
-    background: #10a37f;
-    color: white;
+  .link-linkedin {
+    background: #ffd700;
+    color: #333;
+    border: 1px solid #d4af37;
   }
-  .link-chatgpt:hover { background: #0d8a6b; }
+  .link-linkedin:hover { background: #ffc700; }
 
   /* remaining fields */
   .fields-grid {
@@ -342,33 +427,72 @@
   .modal-box p { font-size: 0.9rem; color: #555; line-height: 1.55; margin-bottom: 1.25rem; }
   .modal-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
 
-  /* tag field in search links */
-  .tag-group {
-    display: flex;
-    flex-direction: column;
+  /* LLM Fill Box */
+  .llm-fill-box {
+    background: #f5f7ff;
+    border: 2px solid #4f6ef7;
+    border-radius: 10px;
+    padding: 1rem;
   }
-  .tag-group label {
-    font-size: 0.72rem;
+
+  .llm-fill-box h4 {
+    font-size: 0.85rem;
     font-weight: 700;
-    color: #555;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 0.25rem;
+    color: #4f6ef7;
+    margin-bottom: 0.5rem;
   }
-  .tag-group .tag-hint {
-    font-size: 0.7rem;
-    color: #999;
-    margin-top: 0.2rem;
-  }
-  .tag-group input {
-    padding: 0.5rem 0.75rem;
+
+  .llm-fill-box textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 0.75rem;
     border: 1.5px solid #d0d5dd;
     border-radius: 7px;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     font-family: inherit;
-    width: 220px;
+    resize: vertical;
+    margin-bottom: 0.75rem;
   }
-  .tag-group input:focus { outline: none; border-color: #4f6ef7; }
+
+  .llm-fill-box textarea:focus {
+    outline: none;
+    border-color: #4f6ef7;
+  }
+
+  .llm-fill-btn {
+    padding: 0.6rem 1.5rem;
+    background: #4f6ef7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .llm-fill-btn:hover {
+    background: #3a59e8;
+  }
+
+  .llm-fill-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  .llm-status {
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    color: #666;
+  }
+
+  .llm-status.success {
+    color: #2ed573;
+  }
+
+  .llm-status.error {
+    color: #ff4757;
+  }
 
   /* action bar */
   .action-bar {
@@ -388,7 +512,7 @@
 <!-- ══════════════ UPLOAD SCREEN ══════════════ -->
 <div id="upload-screen">
   <div class="upload-card">
-    <h1>CRM Cleanup Tool</h1>
+    <h1>CRM Cleanup Tool V2</h1>
     <p>Upload your master CRM CSV to start filling in missing information.</p>
 
     <div class="file-drop" id="file-drop" onclick="document.getElementById('file-input').click()">
@@ -407,11 +531,11 @@
       <ol>
         <li>Upload your <strong>Master CRM CSV</strong> file above.</li>
         <li>The tool will find every row with missing information and show them to you one at a time.</li>
-        <li><strong>Red fields</strong> are empty — fill them in if you can. Other fields are editable too.</li>
-        <li>Use the <strong>Google / LinkedIn</strong> link to look the person up, or <strong>Ask ChatGPT</strong> to have AI find the missing fields for you automatically.</li>
+        <li><strong>Red fields</strong> are empty — fill them in if you can.</li>
+        <li><strong>Yellow/Orange fields</strong> were filled by AI — review and click <strong>Confirm</strong> to verify them.</li>
+        <li>Use the <strong>Google / LinkedIn</strong> link to look the person up.</li>
         <li>Click <strong>Save &amp; Continue</strong> to save changes and move to the next person, or <strong>Skip</strong> to move on without saving.</li>
         <li><strong>Important:</strong> Click <strong>Download CSV</strong> periodically to save your progress as a file. Save &amp; Continue only keeps changes in your browser — if you close the tab without downloading, you may lose progress.</li>
-        <li>Use the <strong>TAG</strong> field (bottom of each row) to note someone who might know more about this contact.</li>
       </ol>
     </div>
 
@@ -454,6 +578,33 @@
     </div>
   </div>
 
+  <!-- Confidence Legend -->
+  <div class="confidence-legend">
+    <div class="legend-title">Field Color Guide</div>
+    <div class="legend-grid">
+      <div class="legend-item">
+        <div class="legend-color empty"></div>
+        <span>Empty (fill required)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color low"></div>
+        <span>AI Low Confidence</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color medium"></div>
+        <span>AI Medium Confidence</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color high"></div>
+        <span>AI High Confidence</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color confirmed"></div>
+        <span>Confirmed</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Essential Info -->
   <div class="card">
     <div class="card-title">Essential Information</div>
@@ -466,12 +617,22 @@
       <span style="font-size:0.82rem;color:#888;font-weight:600;">Find online:</span>
       <a id="google-link" href="#" target="_blank" class="search-link link-google">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Google / LinkedIn
+        Google
       </a>
-      <a id="chatgpt-link" href="#" target="_blank" class="search-link link-chatgpt">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        Ask ChatGPT to fill missing fields
+      <a id="linkedin-link" href="#" target="_blank" class="search-link link-linkedin">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+        <span id="linkedin-link-text">LinkedIn</span>
       </a>
+    </div>
+  </div>
+
+  <!-- LLM Fill Box -->
+  <div class="card">
+    <div class="llm-fill-box">
+      <h4>Fill with AI - Paste LinkedIn Content</h4>
+      <textarea id="llm-paste-area" placeholder="Paste the entire LinkedIn page content here (Ctrl+A then Ctrl+C on the LinkedIn page, then paste here)..."></textarea>
+      <button class="llm-fill-btn" onclick="fillWithLLM()" id="llm-fill-btn">Parse & Fill Missing Fields</button>
+      <div class="llm-status" id="llm-status"></div>
     </div>
   </div>
 
@@ -564,7 +725,9 @@ let state = {
   savedCount: 0
 };
 
-const ESSENTIAL = ['First Name', 'Last Name', 'Email', 'LinkedIn', 'Investor Type  (Individual, RIA, B/D, VC, FO)', 'Organization', 'SME', 'TAG'];
+const ESSENTIAL = ['First Name', 'Last Name', 'Email', 'LinkedIn', 'Investor Type  (Individual, RIA, B/D, VC, FO)', 'Organization', 'SME'];
+
+const LLM_FIELDS = ['LinkedIn', 'Position', 'Organization', 'SME', 'HQ City', 'HQ State', 'Phone'];
 
 const PERSONAL_DOMAINS = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','aol.com','me.com','live.com','msn.com','protonmail.com','proton.me','mail.com','ymail.com','googlemail.com']);
 
@@ -597,12 +760,32 @@ function getCompanyFromEmail(emailCell) {
 
 function rowHasMissing(rowObj, headers) {
   // Skip auto-derived cols from missing check
-  const SKIP = new Set(['Personal or Work Email', 'Investor Y/N', 'TAG']);
+  const SKIP = new Set(['Personal or Work Email', 'Investor Y/N']);
   for (const h of headers) {
     if (SKIP.has(h)) continue;
+    if (h.includes('_filled_by_llm') || h.includes('_llm_confidence')) continue;
     if (!rowObj[h] || rowObj[h].trim() === '') return true;
   }
   return false;
+}
+
+function getLLMConfidence(row, fieldName) {
+  const confidenceKey = fieldName + '_llm_confidence';
+  const filledKey = fieldName + '_filled_by_llm';
+
+  if (row[confidenceKey] === 'Confirmed') return 'confirmed';
+  if (row[filledKey] === 'True' || row[filledKey] === 'true') {
+    const conf = row[confidenceKey];
+    if (conf === 'low') return 'low';
+    if (conf === 'medium') return 'medium';
+    if (conf === 'high') return 'high';
+  }
+  return null;
+}
+
+function isLLMFilled(row, fieldName) {
+  const filledKey = fieldName + '_filled_by_llm';
+  return row[filledKey] === 'True' || row[filledKey] === 'true';
 }
 
 // ══════════════════════════════════════════════
@@ -641,7 +824,7 @@ function handleFile(file) {
     state.headers = headers;
 
     // Check localStorage for saved progress
-    const saved = localStorage.getItem('crm_' + file.name);
+    const saved = localStorage.getItem('crm_v2_' + file.name);
     if (saved) {
       try {
         const data = JSON.parse(saved);
@@ -680,7 +863,7 @@ function startFresh() {
   state.incompleteIdxs = state.rows.map((r,i) => rowHasMissing(r, state.headers) ? i : -1).filter(i => i >= 0);
   state.cursor = 0;
   state.savedCount = 0;
-  localStorage.removeItem('crm_' + state.filename);
+  localStorage.removeItem('crm_v2_' + state.filename);
   hideBanner();
   startEditing();
 }
@@ -759,22 +942,17 @@ function renderEssential(row) {
   essentialMapped.forEach(colKey => {
     const val = row[colKey] ?? '';
     const isEmpty = !val || val.trim() === '';
-    const isTagField = colKey === 'TAG';
     const fg = document.createElement('div');
     fg.className = 'field-group';
 
     // Label
     const label = document.createElement('label');
-    if (isTagField) {
-      label.textContent = 'Tag (tag this with someone who may know this person)';
-    } else {
-      label.textContent = colKey.replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
-      if (isEmpty) {
-        const badge = document.createElement('span');
-        badge.className = 'empty-badge';
-        badge.textContent = 'EMPTY';
-        label.appendChild(badge);
-      }
+    label.textContent = colKey.replace(/\s*\n\s*/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    if (isEmpty) {
+      const badge = document.createElement('span');
+      badge.className = 'empty-badge';
+      badge.textContent = 'EMPTY';
+      label.appendChild(badge);
     }
     fg.appendChild(label);
 
@@ -783,7 +961,6 @@ function renderEssential(row) {
     let input;
     if (enumOptions) {
       input = document.createElement('select');
-      input.className = isEmpty ? 'empty' : '';
       const blank = document.createElement('option');
       blank.value = ''; blank.textContent = '— select —';
       input.appendChild(blank);
@@ -796,59 +973,104 @@ function renderEssential(row) {
       if (!isEmpty) input.value = val;
       input.addEventListener('change', () => {
         row[colKey] = input.value;
-        input.className = input.value.trim() === '' ? 'empty' : '';
+        updateFieldClass(input, colKey, row);
       });
     } else {
       input = document.createElement('input');
       input.type = 'text';
       input.value = val;
-      if (isTagField) {
-        input.placeholder = 'Ex: Dexter';
-        input.className = ''; // Never red for TAG
-      } else {
-        input.className = isEmpty ? 'empty' : '';
-      }
       input.addEventListener('input', () => {
         row[colKey] = input.value;
-        if (!isTagField) {
-          input.className = input.value.trim() === '' ? 'empty' : '';
-        }
+        updateFieldClass(input, colKey, row);
       });
     }
+
     input.dataset.col = colKey;
+    updateFieldClass(input, colKey, row);
     fg.appendChild(input);
+
+    // Add confirm button if LLM-filled
+    if (isLLMFilled(row, colKey)) {
+      const confirmBtn = createConfirmButton(row, colKey, input);
+      fg.appendChild(confirmBtn);
+    }
+
     container.appendChild(fg);
   });
+}
+
+function updateFieldClass(input, colKey, row) {
+  const val = row[colKey] ?? '';
+  const isEmpty = !val || val.trim() === '';
+  const confidence = getLLMConfidence(row, colKey);
+
+  input.className = '';
+  if (confidence === 'confirmed') {
+    input.className = 'llm-confirmed';
+  } else if (confidence === 'low') {
+    input.className = 'llm-low';
+  } else if (confidence === 'medium') {
+    input.className = 'llm-medium';
+  } else if (confidence === 'high') {
+    input.className = 'llm-high';
+  } else if (isEmpty) {
+    input.className = 'empty';
+  }
+}
+
+function createConfirmButton(row, colKey, input) {
+  const confidenceKey = colKey + '_llm_confidence';
+  const isConfirmed = row[confidenceKey] === 'Confirmed';
+
+  const btn = document.createElement('button');
+  btn.className = isConfirmed ? 'confirm-btn confirmed' : 'confirm-btn';
+  btn.textContent = isConfirmed ? '✓ Confirmed' : 'Confirm';
+  btn.dataset.col = colKey;
+
+  if (!isConfirmed) {
+    btn.onclick = () => {
+      row[confidenceKey] = 'Confirmed';
+      btn.className = 'confirm-btn confirmed';
+      btn.textContent = '✓ Confirmed';
+      updateFieldClass(input, colKey, row);
+    };
+  }
+
+  return btn;
 }
 
 function renderSearchLinks(row) {
   const firstName = (row['First Name'] || '').trim();
   const lastName  = (row['Last Name']  || '').trim();
   const email     = (row['Email']      || '').trim();
-  const company   = getCompanyFromEmail(email) || '';
+  const linkedinValue = (row['LinkedIn'] || '').trim();
+  const personalOrWork = (row['Personal or Work Email'] || '').trim();
 
-  const query = [firstName, lastName, company, 'linkedin'].filter(Boolean).join(' ');
-  const googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(query);
-
-  // Build missing fields list for ChatGPT
-  const SKIP_COLS = new Set(['Personal or Work Email', 'Investor Y/N', 'TAG', 'Trusted (Y/N)']);
-  const missingFields = state.headers.filter(h => !SKIP_COLS.has(h) && (!row[h] || row[h].trim() === ''));
-
-  let chatgptPrompt = '';
-  if (missingFields.length > 0) {
-    const companyPart = company ? ` at ${company}` : '';
-    chatgptPrompt =
-      `I'm building a CRM and need help filling in missing information for a contact.\n\n` +
-      `Person: ${firstName} ${lastName}${companyPart}\n` +
-      `Please search LinkedIn for this person (Google: "${query}") and help me find the following missing fields:\n` +
-      missingFields.map(f => `- ${f.replace(/\s*\n\s*/g,' ').replace(/\s{2,}/g,' ').trim()}`).join('\n') +
-      `\n\nPlease return just the field names and values in a simple list. If you can't find a value, say "unknown".`;
-  } else {
-    chatgptPrompt = `Search LinkedIn for ${firstName} ${lastName}${company ? ' at ' + company : ''} and confirm their details.`;
+  // Get company from email if it's a work email
+  let company = '';
+  if (personalOrWork === 'W') {
+    company = getCompanyFromEmail(email) || '';
   }
 
+  const query = [firstName, lastName, company].filter(Boolean).join(' ');
+  const googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+
   document.getElementById('google-link').href = googleUrl;
-  document.getElementById('chatgpt-link').href = 'https://chatgpt.com/?q=' + encodeURIComponent(chatgptPrompt);
+
+  // LinkedIn button behavior
+  const linkedinLink = document.getElementById('linkedin-link');
+  const linkedinText = document.getElementById('linkedin-link-text');
+
+  if (linkedinValue) {
+    // If LinkedIn URL exists, open it directly
+    linkedinLink.href = linkedinValue;
+    linkedinText.textContent = 'LinkedIn';
+  } else {
+    // If no LinkedIn URL, search for the person
+    const searchQuery = [firstName, lastName, company].filter(Boolean).join(' ');
+    linkedinLink.href = 'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(searchQuery);
+    linkedinText.textContent = 'Search LinkedIn for this person';
+  }
 }
 
 function renderRemaining(row) {
@@ -860,7 +1082,12 @@ function renderRemaining(row) {
   );
   const SKIP_IN_REMAINING = new Set(['Personal or Work Email']);
 
-  const remaining = state.headers.filter(h => !essentialSet.has(h) && !SKIP_IN_REMAINING.has(h));
+  const remaining = state.headers.filter(h => {
+    if (essentialSet.has(h)) return false;
+    if (SKIP_IN_REMAINING.has(h)) return false;
+    if (h.includes('_filled_by_llm') || h.includes('_llm_confidence')) return false;
+    return true;
+  });
 
   // Sort: empty first, then filled
   const empty = remaining.filter(h => !row[h] || row[h].trim() === '');
@@ -910,7 +1137,6 @@ function buildFieldGroup(colKey, row, isEmpty) {
   let input;
   if (enumOptions) {
     input = document.createElement('select');
-    input.className = isEmpty ? 'empty' : '';
     const blank = document.createElement('option');
     blank.value = ''; blank.textContent = '— select —';
     input.appendChild(blank);
@@ -928,30 +1154,37 @@ function buildFieldGroup(colKey, row, isEmpty) {
     fg.appendChild(hint);
     input.addEventListener('change', () => {
       row[colKey] = input.value;
-      input.className = input.value.trim() === '' ? 'empty' : '';
+      updateFieldClass(input, colKey, row);
     });
-    return fg;
   } else if (isLongText(colKey)) {
     input = document.createElement('textarea');
     input.rows = 2;
     input.value = val;
-    input.className = isEmpty ? 'empty' : '';
     input.addEventListener('input', () => {
       row[colKey] = input.value;
-      input.className = input.value.trim() === '' ? 'empty' : '';
+      updateFieldClass(input, colKey, row);
     });
+    fg.appendChild(input);
   } else {
     input = document.createElement('input');
     input.type = 'text';
     input.value = val;
-    input.className = isEmpty ? 'empty' : '';
     input.addEventListener('input', () => {
       row[colKey] = input.value;
-      input.className = input.value.trim() === '' ? 'empty' : '';
+      updateFieldClass(input, colKey, row);
     });
+    fg.appendChild(input);
   }
+
   input.dataset.col = colKey;
-  fg.appendChild(input);
+  updateFieldClass(input, colKey, row);
+
+  // Add confirm button if LLM-filled
+  if (isLLMFilled(row, colKey)) {
+    const confirmBtn = createConfirmButton(row, colKey, input);
+    fg.appendChild(confirmBtn);
+  }
+
   return fg;
 }
 
@@ -1005,7 +1238,7 @@ function saveToLocalStorage() {
     savedCount: state.savedCount
   };
   try {
-    localStorage.setItem('crm_' + state.filename, JSON.stringify(data));
+    localStorage.setItem('crm_v2_' + state.filename, JSON.stringify(data));
   } catch(e) {
     // localStorage quota exceeded - silent fail
   }
@@ -1032,7 +1265,182 @@ function showDone() {
   document.getElementById('done-screen').style.display = 'flex';
   document.getElementById('done-text').textContent =
     `You reviewed all ${state.incompleteIdxs.length} incomplete rows and saved ${state.savedCount} of them. Download your completed CSV below.`;
-  localStorage.removeItem('crm_' + state.filename);
+  localStorage.removeItem('crm_v2_' + state.filename);
+}
+
+// ══════════════════════════════════════════════
+//  LLM FILL FUNCTIONALITY
+// ══════════════════════════════════════════════
+
+const OPENROUTER_API_KEY = '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';
+const FILLABLE_FIELDS = ['LinkedIn', 'Phone', 'SME', 'Organization', 'Position', 'HQ City', 'HQ State'];
+
+async function fillWithLLM() {
+  const pasteArea = document.getElementById('llm-paste-area');
+  const statusDiv = document.getElementById('llm-status');
+  const fillBtn = document.getElementById('llm-fill-btn');
+
+  const pastedContent = pasteArea.value.trim();
+
+  if (!pastedContent) {
+    statusDiv.textContent = 'Please paste LinkedIn content first!';
+    statusDiv.className = 'llm-status error';
+    return;
+  }
+
+  const rowIdx = state.incompleteIdxs[state.cursor];
+  const row = state.rows[rowIdx];
+
+  // Identify missing fillable fields
+  const missingFields = [];
+  for (const field of FILLABLE_FIELDS) {
+    if (!row[field] || row[field].trim() === '') {
+      missingFields.push(field);
+    }
+  }
+
+  if (missingFields.length === 0) {
+    statusDiv.textContent = 'No missing fields to fill!';
+    statusDiv.className = 'llm-status';
+    return;
+  }
+
+  // Disable button and show loading
+  fillBtn.disabled = true;
+  statusDiv.textContent = 'Calling AI to parse content...';
+  statusDiv.className = 'llm-status';
+
+  try {
+    const llmResponse = await callLLMAPI(row, pastedContent, missingFields);
+
+    if (llmResponse && llmResponse.fields) {
+      let fieldsUpdated = 0;
+
+      for (const [fieldName, fieldData] of Object.entries(llmResponse.fields)) {
+        const value = fieldData.value || '';
+        const confidence = fieldData.confidence || 'medium';
+
+        // Only update if field is actually missing
+        if (missingFields.includes(fieldName) && value) {
+          row[fieldName] = value;
+
+          // Set metadata columns
+          const filledCol = fieldName + '_filled_by_llm';
+          const confidenceCol = fieldName + '_llm_confidence';
+
+          row[filledCol] = 'True';
+          row[confidenceCol] = confidence;
+
+          fieldsUpdated++;
+        }
+      }
+
+      if (fieldsUpdated > 0) {
+        statusDiv.textContent = `✓ Successfully filled ${fieldsUpdated} field(s)! Review and confirm below.`;
+        statusDiv.className = 'llm-status success';
+
+        // Re-render the form to show updated fields
+        renderEssential(row);
+        renderRemaining(row);
+
+        // Clear the textarea
+        pasteArea.value = '';
+      } else {
+        statusDiv.textContent = 'No fields were updated. AI may not have found relevant information.';
+        statusDiv.className = 'llm-status';
+      }
+    } else {
+      statusDiv.textContent = 'AI could not parse the content. Try pasting more complete LinkedIn page content.';
+      statusDiv.className = 'llm-status error';
+    }
+  } catch (error) {
+    console.error('LLM Error:', error);
+    statusDiv.textContent = `Error: ${error.message}`;
+    statusDiv.className = 'llm-status error';
+  } finally {
+    fillBtn.disabled = false;
+  }
+}
+
+async function callLLMAPI(row, pastedContent, missingFields) {
+  const firstName = row['First Name'] || '';
+  const lastName = row['Last Name'] || '';
+  const email = row['Email'] || '';
+
+  // Build context about existing data
+  const existingInfo = [];
+  if (row['Organization']) existingInfo.push(`Organization: ${row['Organization']}`);
+  if (row['Position']) existingInfo.push(`Position: ${row['Position']}`);
+  if (row['SME']) existingInfo.push(`SME/Specialty: ${row['SME']}`);
+  const existingContext = existingInfo.length > 0 ? existingInfo.join('\n- ') : 'None';
+
+  const userPrompt = `Person to enrich:
+- Name: ${firstName} ${lastName}
+- Email: ${email}
+
+EXISTING DATA WE ALREADY HAVE (verify compatibility):
+- ${existingContext}
+
+Missing fields to fill: ${missingFields.join(', ')}
+
+LinkedIn page content:
+${pastedContent}
+
+CRITICAL RULES:
+1. CHECK COMPATIBILITY: Does the LinkedIn content match the person and existing data?
+2. ONLY extract information for the missing fields listed above
+3. For each field provide a confidence level: "high", "medium", or "low"
+4. Extract exact information from the content - don't make assumptions
+5. For LinkedIn field, extract the full LinkedIn URL if present
+6. For HQ State, use full state name (e.g., "California" not "CA")
+
+Extract the missing information and return ONLY valid JSON in this exact format:
+{
+  "match_confidence": "high|medium|low",
+  "fields": {
+    "LinkedIn": {"value": "https://...", "confidence": "high"},
+    "Position": {"value": "...", "confidence": "medium"}
+  }
+}
+
+Return ONLY the JSON, no other text.`;
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'HTTP-Referer': window.location.origin,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'qwen/qwen3-235b-a22b-2507',
+      messages: [
+        { role: 'user', content: userPrompt }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  let content = data.choices[0].message.content.trim();
+
+  // Parse JSON from response (handle markdown code blocks)
+  if (content.startsWith('```')) {
+    const lines = content.split('\n');
+    content = lines.slice(1, -1).join('\n');
+  }
+
+  const llmResponse = JSON.parse(content);
+
+  // Only proceed if match confidence is medium or high
+  if (llmResponse.match_confidence === 'low') {
+    throw new Error('AI has low confidence this content matches the person');
+  }
+
+  return llmResponse;
 }
 </script>
 </body>
